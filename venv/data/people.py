@@ -12,10 +12,9 @@ class People(db.Document):
     last_name = db.StringField(required = True)
     username = db.StringField(required = True, unique = True)
     password = db.StringField(required = True)
-    email = db.StringField(required = True)
+    email = db.StringField(required = True, unique = True)
 
     ticket_list = db.ListField(db.ReferenceField('ticket.Ticket', DBref = False),  required = False)
-    # Project_ids = db.ListField(db.ReferenceField(project))(required = False)
 
     meta = {
         'abstract':True,
@@ -23,6 +22,7 @@ class People(db.Document):
     }
 
     # def get_name(self):
+    #     pass
     #     return self.name
     #
     # def change_password(self, old_pwd, new_pwd):
@@ -34,6 +34,8 @@ class People(db.Document):
 
 
 class Developer(People):
+    # Project_ids = db.ListField(db.ReferenceField(project))(required = False)
+
 
     def submit_ticket(self, title, comment, priority):
         ticket_buffer = ticket.Ticket(

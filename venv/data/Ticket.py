@@ -10,6 +10,8 @@ class Ticket (db.Document):
     creater = db.ReferenceField('people.People', required = True, DBref = False)
     compeleted = db.BooleanField(default = False)
 
+    #project = db.RefrencField ('Project.Project', required = True, Dbref = False)
+
     meta = {
         'allow_inheritance': True,
         'db_alias': 'core',
