@@ -19,17 +19,16 @@ def global_init():
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     global_init()
-    user = people.People (
+    user = people.Developer (
         username = "gguan",
         email = "gguan@uoregon.edu",
         password = "gguan123456",
         first_name = "xin",
         last_name = "guan"
     ).save()
+    user.submit_ticket("test_ticket", "this is a test submit", 10)
 
     db.disconnect(alias='core')
-    print(user)
-    print(user.username)
 
 
 

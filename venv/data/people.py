@@ -14,25 +14,12 @@ class People(db.Document):
     password = db.StringField(required = True)
     email = db.StringField(required = True)
 
-    def json(self):
-        user_dict: {
-            "first name": self.first_name,
-            "last name": self.last_name,
-            "username": self.username,
-            "password": self.password,
-            "email": self.email,
-        }
-        return json.dumps(user_dict)
-
-    # Ticket_ids = db.ListField(db.ReferenceField(ticket))(required = False)
+    ticket_list = db.ListField(db.ReferenceField('ticket.Ticket', DBref = False),  required = False)
     # Project_ids = db.ListField(db.ReferenceField(project))(required = False)
 
     meta = {
-        'db_alias': 'core',
-        'collection':'People',
+        'abstract':True,
         'allow_inheritance': True,
-        'indexes':["username", "email"],
-        'ordering': ["-register_date"]
     }
 
     # def get_name(self):
@@ -46,23 +33,41 @@ class People(db.Document):
     #     pass
 
 
-# class Developer(People):
-#     def __init__(self, name, username, password):
-#         super().__init__(name, username, password)
-#         self.team = []
-#
-#     def submit_ticket(self, ticket):
-#         #make it submit all tickets
-#         pass
-#
-#
+class Developer(People):
+
+    def submit_ticket(self, title, comment, priority):
+        ticket_buffer = ticket.Ticket(
+            title = title,
+            comment = comment,
+            priority = priority,
+            creater = self
+        ).save()
+
+        self.ticket_list.append(ticket_buffer)
+        self.save()
+        pass
+
+
+    meta = {
+        'db_alias': 'core',
+        'collection':'People',
+        'indexes':["username", "email"],
+        'ordering': ["-register_date"]
+    }
+
+
+
 # class Admin(People):
-#     def __init__(self, name, username, password):
-#         super().__init__(name, username, password)
-#         self.feature_tickets = []
-#         self.employee = []
 #
 #     def submit_ticket(self, ticket):
 #         # make it submit all tickets
 #         # make it only submit feature ticket
 #         pass
+#
+#     meta = {
+#         'db_alias': 'core',
+#         'collection':'People',
+#         'indexes':["username", "email"],
+#         'ordering': ["-register_date"]
+#     }
+
