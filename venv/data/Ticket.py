@@ -1,4 +1,6 @@
-import mongoengine as db
-import datetime
+# import mongoengine as db
+# import datetime
+#
+# class Ticket (db.EmbeddedDocument):
 
-class Ticket (db.EmbeddedDocument):
+pass
