@@ -1,18 +1,21 @@
 import mongoengine as db
 import datetime
-import data.Ticket as ticket
-import data.Project as porject
+import Ticket
+
+
 import json
 import os
 
 
 class People(db.Document):
+    import team
     register_date = db.DateTimeField(default = datetime.datetime.now)
     first_name = db.StringField(required = True)
     last_name = db.StringField(required = True)
     username = db.StringField(required = True, unique = True)
     password = db.StringField(required = True)
     email = db.StringField(required = True, unique = True)
+    team = db.ReferenceField('team.Team', DBref = False)
 
     ticket_list = db.ListField(db.ReferenceField('ticket.Ticket', DBref = False),  required = False)
 
@@ -36,18 +39,17 @@ class People(db.Document):
 class Developer(People):
     # Project_ids = db.ListField(db.ReferenceField(project))(required = False)
 
-
     def submit_ticket(self, title, comment, priority):
-        ticket_buffer = ticket.Ticket(
+        ticket_buffer = Ticket.Ticket(
             title = title,
             comment = comment,
             priority = priority,
             creater = self
-        ).save()
+        )#.save()
 
         self.ticket_list.append(ticket_buffer)
-        self.save()
-        pass
+        # self.save()
+        # pass
 
 
     meta = {
@@ -57,7 +59,8 @@ class Developer(People):
         'ordering': ["-register_date"]
     }
 
-
+# employee1 = People(first_name = "yuyao",last_name = "zhuge",username = "yzhuge",password = "9801",email = "gmail.com")
+# print(employee1.email)
 
 # class Admin(People):
 #
@@ -72,4 +75,3 @@ class Developer(People):
 #         'indexes':["username", "email"],
 #         'ordering': ["-register_date"]
 #     }
-
