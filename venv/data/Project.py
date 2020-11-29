@@ -1,6 +1,6 @@
 import mongoengine as db
 import datetime
-import Ticket
+import data.Ticket as Ticket
 
 class Project(db.Document):
     birthday = db.DateTimeField(default = datetime.datetime.now)

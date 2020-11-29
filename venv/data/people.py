@@ -1,11 +1,13 @@
 import mongoengine as db
 import datetime
-import Ticket
+import data.Ticket as ticket
+import data.Project as porject
+import json
 import os
-
+import data.team as team
 
 class People(db.Document):
-    import team
+
     register_date = db.DateTimeField(default = datetime.datetime.now)
     first_name = db.StringField(required = True)
     last_name = db.StringField(required = True)
@@ -20,13 +22,18 @@ class People(db.Document):
         self.project.append(project)
 
     def display_people(self):
+        if self is None:
+            print ('nothing is display')
         print("username: {}".format(self.username))
         print("first_name: {}".format(self.first_name))
         print("last_name: {}".format(self.last_name))
 
     meta = {
-        'abstract':True,
         'allow_inheritance': True,
+        'db_alias': 'core',
+        'collection': 'People',
+        'indexes': ["username", "email"],
+        'ordering': ["-register_date"]
     }
 
 
@@ -70,14 +77,27 @@ class Developer(People):
 
 class Admin(People):
 
-    def people_search(self, first_name=None, last_name=None):
-        if first_name is None and last_name is None:
+    def people_search(self, first_name='', last_name='', username = '', email = ''):
+        buffer = None
+
+        if first_name == last_name == username == email =='':
             print("No parameter entered.")
             return None
-        elif first_name is None:
-            return People.last_name.search_text(last_name).order_by('$text_score')
-        else:
-            return People.first_name.search_text(first_name).order_by('$text_score')
+        elif username != '':
+            buffer = People.objects(username = username)
+        elif email != '':
+            buffer = People.objects(email=email)
+        elif first_name != '' and last_name != '':
+            buffer = People.objects(first_name = first_name, last_name = last_name)
+        elif first_name =='' and last_name != '':
+            buffer = People.objects(last_name = last_name)
+        elif last_name == '' and first_name != '':
+            buffer = People.objects(first_name = first_name)
+
+        if len(buffer) == 0:
+            return None
+
+        return buffer
 
     def submit_ticket(self, ticket):
         # make it submit all tickets
