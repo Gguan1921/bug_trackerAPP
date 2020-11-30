@@ -35,7 +35,7 @@ class Project(db.Document):
     comment = db.StringField()
     complete = db.BooleanField(required = True, default = False)
     required_ticket = db.ListField(db.EmbeddedDocumentField('Ticket'))
-    team = db.ReferenceField('Team')
+    team = db.ListField(db.ReferenceField('Team'))
 
     def edit_comment(self, comment):
         self.comment = comment
@@ -172,7 +172,7 @@ class Developer(People):
                 for team in self.team:
                     print(team.to_json(indent=4))
                 continue
-            if option_D == '2':
+            elif option_D == '2':
                 #view project -> display_project
                 if self.project == []:
                     print("You haven't had any projects.")
@@ -180,7 +180,7 @@ class Developer(People):
                 for project in self.project:
                     print(project.to_json(indent=4))
                     print()
-            if option_D == '3':
+            elif option_D == '3':
                 #view ticket -> display_ticket
                 if self.ticket_list == []:
                     print("You don't have any tickets")
@@ -188,7 +188,7 @@ class Developer(People):
                 for ticket in self.ticket_list:
                     print(ticket.to_json(indent=4))
                     print()
-            if option_D == '4':
+            elif option_D == '4':
                 #create_ticket(let the user to choose which project to add in)
                 project = input("Which project do you want to add ticket in? Type in Project _id:\n")
                 while (len(Project.objects(pk = project)) == 0):
@@ -197,8 +197,9 @@ class Developer(People):
                 project_buffer = Project.objects(pk = project)
                 project_buffer = project_buffer[0]
                 title = input("What is the title of this ticket?\n")
+                comment_list = []
                 comment = input("What is the comment you want to add in?\n")
-
+                comment_list.append(comment)
                 while True:
                     try:
                         priority = int(input("What is the priority of this ticket?\n"))
@@ -217,15 +218,18 @@ class Developer(People):
 
                 new_ticket = Ticket(
                     title = title,
-                    comment = comment,
+                    comment = comment_list,
                     priority = priority,
                     assigned_to_person = assigned_to_person_buffer,
                     creater = self
                 )
                 project_buffer.required_ticket.append(new_ticket)
                 project_buffer.save()
-                assigned_to_person.ticket_list.append(new_ticket)
-                assigned_to_person.save()
+                assigned_to_person_buffer.ticket_list.append(new_ticket)
+                assigned_to_person_buffer.save()
+                print("ticket saved.")
+            elif option_D == '5':
+                break
 
     def create_ticket(self, project, ticket):
         pass
@@ -280,17 +284,21 @@ class Admin(People):
                 if result == []:
                     print("Everyone has been assigned to teams\n")
                     continue
+                # for person in result:
+                #     print()
+                #     person.display_people()
+                # print()
                 for person in result:
-                    print()
-                    person.display_people()
+                    print("Username: \"{}\" haven't been assigned to teams.".format(person.username))
+                print()
                 print("1. Assign people to teams")
                 print("2. Go back to Menu")
                 option_A1 = input("Enter 1 or 2\n")
-                if option_A1 == "2":
+                if option_A1 == '2':
                     continue
-                elif option_A1 == "1":
+                elif option_A1 == '1':
                     person_username = input("Enter this person's username: ")
-                    while len((People.objects(username = person_username)) == 0):
+                    while len(People.objects(username = person_username)) == 0:
                         print("Unmatched registered username.")
                         person_username = input("Enter this person's username: ")
                     person = People.objects(username = person_username)
@@ -299,7 +307,7 @@ class Admin(People):
                     if Team.objects() == None:
                         print("No teams have been created.")
                         continue
-                    while len((Team.objects(name = team_name)) == 0):
+                    while len(Team.objects(name = team_name)) == 0:
                         print("Unmatched team name.")
                         team_name = input("Enter the team name to join in: ")
                     team = Team.objects(name = team_name)
@@ -307,11 +315,14 @@ class Admin(People):
                     if person not in team.member:
                         team.member.append(person)
                         person.team.append(team)
+                        team.save()
+                        person.save()
                         print(person.to_json(indent=4))
-                        print("User: ", person.username, " is now assigned to team: ", team.name)
+                        print("User: \"{}\" is now assigned to team: {}".format(person.username,team.name))
                         continue
                     else:
-                        break
+                        print("User: \"{}\" is already in this team.".format(person.username))
+                        continue
 
                 else:
                     continue
@@ -347,11 +358,10 @@ class Admin(People):
 
             elif option_A == '5':
                 #create team
-                new_name = input("\nEnter a name for this team: ")
+                new_name = input("Enter a name for this team: ")
                 while len(Team.objects(name = new_name)) != 0:
                     print("duplicated team name")
                     new_name = input("Enter a name for this team: ")
-
                 member_list = []
                 person_username = input("Add a person(username) to this team: ")
                 while len(People.objects(username = person_username)) == 0:
@@ -370,22 +380,14 @@ class Admin(People):
                     print("Unmatched project _id.")
                     project = input("Add a project(Project_ids) to this team: ")
                 project_buffer = Project.objects(pk = project)
-                project_buffer = project_buffer[0]
-                if project_buffer.team != None:
+
+                if project_buffer.team != []:
                     print("This project has already been assigned to another team.")
+                    continue
                 else:
-                    project_list.append(Project.objects(pk = project))
-                # while True:
-                #     project = input("Add a project(Project_ids) to this team: ")
-                #     elif project == Project.objects(_id = project)._id:
-                #         while Project.objects(_id = project).team != None:
-                #             print("This project has already been assigned to another team.")
-                #             project = input("(Press \"return\" to go back. Add another project(Project_ids) to this team: ")
-                #             if project == '\n':
-                #                 break
-                #         project_list.append(Project.objects(_id = project))
-                    # else:
-                    #     print("Unmatched Project_id.")
+                    project_buffer = project_buffer[0]
+                    project_list.append(project_buffer)
+
                 admin_list = []
                 admin = input("Add an Admin(username) to this team: ")
                 while len(Admin.objects(username = admin)) == 0:
@@ -402,10 +404,12 @@ class Admin(People):
                     admin = admin_list
                 ).save()
                 for people in member_list:
-                    people.team.append(new_team).save()
-                if project_list != []:
-                    for project in project_list:
-                        project.team = new_team.save()
+                    people.team.append(new_team)
+                    people.save()
+
+                for project in project_list:
+                    project.team.append(new_team)
+                    project.save()
             elif option_A == '6':
                 #assign_project_to_team -> Team.assigned_to_team
                 project = input("Enter the Project_id: ")
@@ -425,10 +429,12 @@ class Admin(People):
                     team_buffer = team_buffer[0]
 
                     #save into this team
-                    team_buffer.append(project_buffer).save()
+                    team_buffer.project.append(project_buffer)
+                    team_buffer.save()
                     #save into all team members
                     for people in team_buffer.member:
-                        people.project.append(project_buffer).save()
+                        people.project.append(project_buffer)
+                        people.save()
 
             elif option_A == '7':
                 break
