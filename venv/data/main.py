@@ -13,7 +13,7 @@ class Ticket (db.EmbeddedDocument):
     comment = db.ListField(db.StringField(required = True))
     priority = db.IntField(required = True, max_value = 10, min_value = 1)
     creater = db.ReferenceField('People', required = True, DBref = False)
-    compeleted = db.BooleanField(default = False)
+    completed = db.BooleanField(default = False)
     meta = {
         'allow_inheritance': True,
         'db_alias': 'core',
@@ -30,7 +30,7 @@ class Bug_ticket (Ticket):
 
 class Project(db.Document):
     birthday = db.DateTimeField(default = datetime.datetime.now)
-    title = db.StringField(required = True)
+    title = db.StringField(required = True, unique = True)
     description = db.StringField(required = True)
     comment = db.StringField()
     complete = db.BooleanField(required = True, default = False)
@@ -164,14 +164,15 @@ class Developer(People):
             print("5. Exit")
             option_D = input("Enter 1, 2, 3, 4, or 5\n")
             if option_D == '1':
-                # print(db.People().find({}, {name: 1, admin: 1, _id: 0}))
                 #view team (only see the teams he joined in)
                 if self.team == []:
                     print("You haven't been in any teams.")
                     continue
                 for team in self.team:
                     print(team.to_json(indent=4))
-                continue
+                print()
+                for team in self.team:
+                    print("Team: ", team.name)
             elif option_D == '2':
                 #view project -> display_project
                 if self.project == []:
@@ -180,6 +181,8 @@ class Developer(People):
                 for project in self.project:
                     print(project.to_json(indent=4))
                     print()
+                for project in self.project:
+                    print("Project: ", project.title)
             elif option_D == '3':
                 #view ticket -> display_ticket
                 if self.ticket_list == []:
@@ -188,13 +191,15 @@ class Developer(People):
                 for ticket in self.ticket_list:
                     print(ticket.to_json(indent=4))
                     print()
+                for ticket in self.ticket_list:
+                    print("ticket: ",ticket.title)
             elif option_D == '4':
                 #create_ticket(let the user to choose which project to add in)
-                project = input("Which project do you want to add ticket in? Type in Project _id:\n")
-                while (len(Project.objects(pk = project)) == 0):
-                    print("Unmatched project_id")
-                    project = input("Which project do you want to add ticket in? Type in Project _id:\n")
-                project_buffer = Project.objects(pk = project)
+                project = input("Which project do you want to add ticket in? Type in Project title:\n")
+                while (len(Project.objects(title = project)) == 0):
+                    print("Unmatched project title.")
+                    project = input("Which project do you want to add ticket in? Type in Project title:\n")
+                project_buffer = Project.objects(title = project)
                 project_buffer = project_buffer[0]
                 title = input("What is the title of this ticket?\n")
                 comment_list = []
@@ -265,38 +270,86 @@ class Admin(People):
 
         return buffer
 
+    def check_who_not_in_team(self):
+        result = People.objects(team = [])
+        if len(result) == 0:
+            print("Everyone has been assigned to teams\n")
+            return 1
+        for person in result:
+            print("Username: \"{}\" haven't been assigned to teams.".format(person.username))
+        print()
+
+    def check_project_not_in_team(self):
+        result = Project.objects(team = [])
+        if len(result) == 0:
+            print("All projects have been assigned to teams.\n")
+            return 1
+        for project in result:
+            print("Project: \"{}\" haven't been assigned to teams.".format(project.title))
+
     def Admin_menu(self):
         result = None
         while True:
             print()
             print("Admin Menu")
-            print("1. Check who is not in any teams yet.")
-            print("2. View all teams.")
-            print("3. View all projects.")
-            print("4. View all tickets.")
+            print("1. View all teams.")
+            print("2. View all projects.")
+            print("3. View all tickets.")
+            print("4. Check who is not in any teams yet.")
             print("5. Create a new team")
             print("6. Assign project to team")
             print("7. Exit")
-            option_A = input("Enter 1, 2, 3, 4, 5, or 6\n")
+            option_A = input("Enter 1, 2, 3, 4, 5, 6, or 7\n")
             if option_A == '1':
-                #check who is not in any teams yet.
-                result = People.objects(team = [])
-                if result == []:
-                    print("Everyone has been assigned to teams\n")
+                #view team (see all teams)
+                if Team.objects() == None:
+                    print("No team has been created.")
                     continue
-                # for person in result:
-                #     print()
-                #     person.display_people()
-                # print()
-                for person in result:
-                    print("Username: \"{}\" haven't been assigned to teams.".format(person.username))
-                print()
+                else:
+                    for team in Team.objects():
+                        print(team.to_json(indent=4))
+                        print()
+                    for team in Team.objects():
+                        print("Team: ", team.name)
+
+            elif option_A == '2':
+                #view all projects -> display_project
+                if Project.objects() == None:
+                    print("No project exists")
+                    continue
+                else:
+                    for project in Project.objects():
+                        print(project.to_json(indent=4))
+                        print()
+                    for project in Project.objects():
+                        print("Project: ",project.title)
+
+            elif option_A == '3':
+                #view ticket -> display_ticket
+                for project in Project.objects():
+                    if project.required_ticket == []:
+                        print("No ticket exists.")
+                        continue
+                    else:
+                        for ticket in project.required_ticket:
+                            print(ticket.to_json(indent=4))
+                            print()
+                        for ticket in project.required_ticket:
+                            print("Ticket: ", ticket.title)
+            elif option_A == '4':
+                #check who is not in any teams yet.
+                result = self.check_who_not_in_team()
+                if result == 1:
+                    continue
                 print("1. Assign people to teams")
                 print("2. Go back to Menu")
                 option_A1 = input("Enter 1 or 2\n")
                 if option_A1 == '2':
                     continue
                 elif option_A1 == '1':
+                    for team in Team.objects:
+                        print("Available Team: ", team.name)
+                    print()
                     person_username = input("Enter this person's username: ")
                     while len(People.objects(username = person_username)) == 0:
                         print("Unmatched registered username.")
@@ -322,39 +375,6 @@ class Admin(People):
                         continue
                     else:
                         print("User: \"{}\" is already in this team.".format(person.username))
-                        continue
-
-                else:
-                    continue
-            elif option_A == '2':
-                #view team (see all teams)
-                if Team.objects() == None:
-                    print("No team has been created.")
-                    continue
-                else:
-                    for team in Team.objects():
-                        print(team.to_json(indent=4))
-                        print()
-                    continue
-            elif option_A == '3':
-                #view all projects -> display_project
-                if Project.objects() == None:
-                    print("No project exists")
-                    continue
-                else:
-                    for project in Project.objects():
-                        print(project.to_json(indent=4))
-                        print()
-
-            elif option_A == '4':
-                #view ticket -> display_ticket
-                for project in Project.objects():
-                    if project.required_ticket == []:
-                        continue
-                    else:
-                        for ticket in project.required_ticket:
-                            print(ticket.to_json(indent=4))
-                            print()
 
             elif option_A == '5':
                 #create team
@@ -362,6 +382,13 @@ class Admin(People):
                 while len(Team.objects(name = new_name)) != 0:
                     print("duplicated team name")
                     new_name = input("Enter a name for this team: ")
+                result1 = self.check_who_not_in_team()
+                if result1 == 1:
+                    new_team = Team(
+                        name = new_name
+                    ).save()
+                    print("Empty team: ", new_team.name, " has been created.")
+                    continue
                 member_list = []
                 person_username = input("Add a person(username) to this team: ")
                 while len(People.objects(username = person_username)) == 0:
@@ -373,21 +400,39 @@ class Admin(People):
                     print("This person has been added to this team.")
                     continue
                 member_list.append(person)
-
+                result2 = self.check_project_not_in_team()
+                if result2 == 1:
+                    new_team = Team(
+                        name = new_name,
+                        member = member_list
+                    ).save()
+                    print(new_team.to_json(indent=4))
+                    print("Team: ", team.name, " has been created.")
+                    continue
                 project_list = []
-                project = input("Add a project(Project_ids) to this team: ")
-                while len(Project.objects(pk = project)) == 0:
-                    print("Unmatched project _id.")
-                    project = input("Add a project(Project_ids) to this team: ")
-                project_buffer = Project.objects(pk = project)
-
+                for project in Project.objects:
+                    print("Unassigned Project: ", project.title)
+                project = input("Add a project(Project title) to this team: ")
+                while len(Project.objects(title = project)) == 0:
+                    print("Unmatched project title.")
+                    project = input("Add a project(Project title) to this team: ")
+                project_buffer = Project.objects(title = project)
+                project_buffer = project_buffer[0]
                 if project_buffer.team != []:
                     print("This project has already been assigned to another team.")
+                    new_team = Team(
+                        name = new_name,
+                        member = member_list
+                    ).save()
+                    print(new_team.to_json(indent=4))
+                    print("Team: ", team.name, " has been created.")
                     continue
                 else:
-                    project_buffer = project_buffer[0]
                     project_list.append(project_buffer)
 
+                for admin in Admin.objects:
+                    print("Available admin: ", admin.username)
+                print()
                 admin_list = []
                 admin = input("Add an Admin(username) to this team: ")
                 while len(Admin.objects(username = admin)) == 0:
@@ -412,15 +457,22 @@ class Admin(People):
                     project.save()
             elif option_A == '6':
                 #assign_project_to_team -> Team.assigned_to_team
-                project = input("Enter the Project_id: ")
-                while (len(Project.objects(pk = project)) == 0):
-                    print("Unmatched project _id.")
-                    project = input("Add a project(Project_ids) to this team: ")
-                project_buffer = Project.objects(pk = project)
+                result = self.check_project_not_in_team()
+                if result == 1:
+                    print("All projects have been assigned to teams.")
+                    continue
+                project = input("Add a project(Project title) to this team: ")
+                while (len(Project.objects(title = project)) == 0):
+                    print("Unmatched project title.")
+                    project = input("Add a project(Project title) to this team: ")
+                project_buffer = Project.objects(title = project)
                 project_buffer = project_buffer[0]
                 if len(project_buffer.team) != 0:
                     print("This project has already been assigned to another team.")
                 else:
+                    for team in Team.objects:
+                        print("Available team: ", team.name)
+                    print()
                     team = input("Enter the team name: ")
                     while (len(Team.objects(name = team)) == 0):
                         print("Unmatched team name.")
@@ -431,6 +483,7 @@ class Admin(People):
                     #save into this team
                     team_buffer.project.append(project_buffer)
                     team_buffer.save()
+                    print("Success. This project has been saved.")
                     #save into all team members
                     for people in team_buffer.member:
                         people.project.append(project_buffer)
@@ -512,7 +565,7 @@ def register():
 
 
     if option == '1':
-        new_employee = people.Developer (
+        new_employee = Developer (
         username = username,
         email = email,
         password = password,
@@ -521,7 +574,7 @@ def register():
         title = "Developer"
         ).save()
     elif option == '2':
-        new_employee = people.Admin (
+        new_employee = Admin (
         username = username,
         email = email,
         password = password,
@@ -571,7 +624,18 @@ if __name__ == '__main__':
         description = "Fall 2020 CIS 407(1)",
         comment = "Mongodb(1)"
     )
-    #print(Project.objects(pk='5fc49c0d730c819fb0d19372').to_json(indent=4))
+    #test:
+    project1 = Project.objects(title = "Term Project")
+    project1 = project1[0]
+
+    employee1 = People.objects(username = "yzhuge")
+    employee1 = employee1[0]
+    employee1.project.append(project1)
+
+    employee2 = People.objects(username = "hi")
+    employee2 = employee2[0]
+    employee2.project.append(project1)
+
 
     employee = start_menu()
     if employee != None:
