@@ -1,15 +1,16 @@
-import data.people as people
-import data.Project as Project
+import people
+import Project
 import mongoengine as db
 import datetime
 
 
 
 class Team (db.Document):
-    name = db.StringField(required = True)
+    name = db.StringField(required = True, unique = True)
     birthday = db.DateTimeField(default = datetime.datetime.now)
     member = db.ListField(db.ReferenceField('people.People'))
     project = db.ListField(db.ReferenceField('Project.Project'))
+    admin = db.StringField()
 
     def assign_project_to_team(self, project):
       self.project.append(project)

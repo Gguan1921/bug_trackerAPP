@@ -1,6 +1,6 @@
 import mongoengine as db
 import datetime
-import data.Ticket as Ticket
+import Ticket
 
 class Project(db.Document):
     birthday = db.DateTimeField(default = datetime.datetime.now)
@@ -9,7 +9,8 @@ class Project(db.Document):
     comment = db.StringField()
     complete = db.BooleanField(required = True, default = False)
     required_ticket = db.ListField(db.ReferenceField('Ticket.Ticket'))
-
+    team = db.ReferenceField('Team')
+    
     def edit_comment(self, comment):
         self.comment = comment
 

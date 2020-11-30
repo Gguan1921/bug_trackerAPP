@@ -1,5 +1,5 @@
 import mongoengine as db
-import data.people as people
+import people
 import datetime
 
 class Ticket (db.Document):
