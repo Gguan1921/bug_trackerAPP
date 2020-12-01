@@ -107,6 +107,7 @@ class People(db.Document):
 
     def assign_project_to_people(self, project):
         self.project.append(project)
+        self.save()
 
     def display_people(self):
         if self is None:
@@ -485,9 +486,12 @@ class Admin(People):
                     team_buffer.save()
                     print("Success. This project has been saved.")
                     #save into all team members
-                    for people in team_buffer.member:
-                        people.project.append(project_buffer)
-                        people.save()
+                    # for people in team_buffer.member:
+                    #     # people = People.objects(project = project_buffer).get()
+                    #     print(people)
+                    #     print(people.project)
+                    #     people.assign_project_to_people(project_buffer)
+
 
             elif option_A == '7':
                 break
